@@ -1,8 +1,35 @@
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+import Page from './good';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
+const server = setupServer(
+  rest.get(
+    'https://my-json-server.typicode.com/savayer/demo/posts',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json([
+          {
+            id: 1000,
+            title: { en: 'hello en', id: 'hello id' },
+            body: { en: 'body en', id: 'body id' },
+            link_title: 'some link here',
+            link: 'http://www.linkedin.com',
+          },
+        ])
+      );
+    }
+  )
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('renders page with cards', async () => {
+  render(<Page />);
+
+  const linkElement = await screen.findByText('some link here');
   expect(linkElement).toBeInTheDocument();
 });
